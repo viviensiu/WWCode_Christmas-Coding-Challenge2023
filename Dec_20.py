@@ -129,3 +129,18 @@ def students_and_examinations(students: pd.DataFrame, subjects: pd.DataFrame, ex
     else:
         output = pd.DataFrame(columns=['student_id', 'student_name', 'subject_name', 'attended_exams'])
     return output
+
+# =============================================================================
+# new and improved solution
+# =============================================================================
+def students_and_examinations(students: pd.DataFrame, subjects: pd.DataFrame, examinations: pd.DataFrame) -> pd.DataFrame:
+    # calc. total exams by subject for each student
+    exams = examinations.groupby(['student_id', 'subject_name']).value_counts().reset_index().rename(columns={'count':'attended_exams'})
+    # create a cartesian product (all possible combos) of students + subjects 
+    # since not all students and subjects are in the exams table
+    cross = students.merge(subjects, how='cross')
+    # update the cartesian product table "cross" with exam data from exams table
+    output = cross.merge(exams, how='left', on=['student_id', 'subject_name'])
+    # fill in NaN with 0 for subjects with zero exams taken
+    output['attended_exams'].fillna(0, inplace=True)
+    return output[[ 'student_id', 'student_name', 'subject_name', 'attended_exams']].sort_values(by=['student_id', 'subject_name'])
